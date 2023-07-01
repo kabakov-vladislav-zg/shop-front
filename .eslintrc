@@ -1,0 +1,33 @@
+{
+  "parser": "vue-eslint-parser",
+  "extends": [
+    "eslint:recommended",
+    "airbnb-base",
+    "plugin:vue/essential",
+    "plugin:vue/vue3-recommended",
+    "plugin:nuxt/recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser"
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "warn",
+    "import/no-extraneous-dependencies": "off",
+    "import/prefer-default-export": "off",
+    "vue/require-default-prop": "off",
+    "quote-props": ["error", "consistent-as-needed"],
+    "linebreak-style": "off",
+    "object-curly-newline":  "off",
+    "max-len": ["error", {
+      "code": 120,
+      "ignoreUrls": true,
+      "ignoreStrings": true,
+      "ignoreTemplateLiterals": true,
+      "ignoreRegExpLiterals": true
+    }],
+    "vuejs-accessibility/mouse-events-have-key-events": "off",
+    "vuejs-accessibility/media-has-caption": "off"
+  }
+}
