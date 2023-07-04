@@ -1,7 +1,18 @@
+<script
+  setup
+  lang="ts"
+>
+
+</script>
+
 <template>
-  <div>
-    <h1 class="bg-red-500 text-3xl font-thin underline">
-      Hello world!
-    </h1>
+  <div class="">
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>
+
+<style scoped>
+
+</style>
