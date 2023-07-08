@@ -2,7 +2,7 @@
   setup
   lang="ts"
 >
-  import UiCarousel from '~/components/ui/UiCarousel/UiCarousel.vue';
+  import UiCarousel from '~/components/app/VCarousel/VCarousel.vue';
 
   const items = [
     {
@@ -24,6 +24,12 @@
       bg: 'bg-fuchsia-400',
     },
   ]
+  const capacity = {
+    xs: 1,
+    sm: 3,
+    md: 4,
+    lg: 5,
+  }
   const padding = ref('');
 </script>
 
@@ -33,6 +39,7 @@
       id="bg"
       :items="items"
       :padding="padding"
+      :capacity="capacity"
     >
       <template
         #item="{ item }"

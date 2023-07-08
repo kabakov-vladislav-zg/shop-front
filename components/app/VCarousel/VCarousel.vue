@@ -2,18 +2,16 @@
   setup
   lang="ts"
 >
-import { Props } from './UiCarousel';
+import { Props } from './VCarousel';
 import { useBindings } from './bindings';
+import { useSettings } from './settings';
 
 const props = withDefaults(defineProps<Props>(), {
   value: 0,
   id: 'id',
   items: () => [],
 });
-const settings = computed(() => {
-  const { value, id, items, ...settings } = props;
-  return settings;
-});
+const settings = useSettings(props);
 const bindings = useBindings(settings);
 </script>
 
@@ -21,20 +19,20 @@ const bindings = useBindings(settings);
   <section
     :style="{ '--count' : value }"
     v-bind="bindings"
-    class="ui-crs"
+    class="VCarousel"
   >
     <div
-      class="ui-crs__stage"
+      class="VCarousel-Stage"
     >
-      <div class="ui-crs__backstage">
+      <div class="VCarousel-BackStage">
         <div
-          class="ui-crs__frontstage"
+          class="VCarousel-FrontStage"
         >
           <slot>
             <div
               v-for="item in items"
               :key="item[id]"
-              class="ui-crs__item"
+              class="VCarousel-Item"
             >
               <slot
                 name="item"
@@ -48,8 +46,29 @@ const bindings = useBindings(settings);
   </section>
 </template>
 
+<style lang="scss">
+$screens: (
+  "sm": "640px",
+  "md": "768px",
+  "lg": "1024px",
+  "xl": "1280px",
+  "2xl": "1536px"
+);
+$settings: "padding", "getters", "capacity", "speed", "justify", ;
+
+@each $breakpoint, $minWidth in $screens {
+  @media (min-width: $minWidth) {
+    @each $setting in $settings {
+      [style*="--#{$setting}-#{$breakpoint}"] {
+        --#{$setting}: var(--#{$setting}-#{$breakpoint})!important;
+      }
+    }
+  }
+}
+</style>
+
 <style>
-.ui-crs {
+.VCarousel {
   --count: 0;
   --padding: 0;
   --getters: 16px;
@@ -60,7 +79,7 @@ const bindings = useBindings(settings);
   flex-wrap: wrap;
 }
 
-.ui-crs__stage {
+.VCarousel-Stage {
   overflow-x: hidden;
   width: 100%;
   padding: var(--padding);
@@ -68,14 +87,14 @@ const bindings = useBindings(settings);
   justify-items: var(--justify);
 }
 
-.ui-crs__backstage {
+.VCarousel-BackStage {
   --visible-items-width: calc(100% - var(--getters) * (var(--capacity) - 1));
   width: calc(var(--visible-items-width) / var(--capacity));
   min-width: 0;
   max-width: 100%;
 }
 
-.ui-crs__frontstage {
+.VCarousel-FrontStage {
   --shift: calc(-1 * var(--count) * (100% + var(--getters)));
   transform: translate3d(var(--shift), 0, 0);
   transition: var(--speed) linear;
@@ -83,17 +102,17 @@ const bindings = useBindings(settings);
   overflow: visible;
   display: flex;
   position: relative;
+
+  &.isDraggable {
+    touch-action: pan-y pinch-zoom;
+  }
+
+  &.isDragged {
+    transition: none;
+  }
 }
 
-.ui-crs__frontstage_draggable {
-  touch-action: pan-y pinch-zoom;
-}
-
-.ui-crs__frontstage_dragged {
-  transition: none;
-}
-
-.ui-crs__item {
+.VCarousel-Item {
   flex-shrink: 0;
   width: 100%;
   margin-right: var(--getters);
