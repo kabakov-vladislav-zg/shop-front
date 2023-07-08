@@ -2,25 +2,49 @@
   setup
   lang="ts"
 >
-import { Props } from './VCarousel';
+import { withDefaults, computed } from 'vue';
+import { Props, Emits } from './VCarousel';
 import { useBindings } from './bindings';
-import { useSettings } from './settings';
+import { usePagination } from './pagination';
+import { useCapacity } from './capacity';
 
 const props = withDefaults(defineProps<Props>(), {
-  value: 0,
+  modelValue: 0,
   id: 'id',
+  capacity: 1,
   items: () => [],
 });
-const settings = useSettings(props);
+const emits = defineEmits<Emits>()
+const settings = computed(() => {
+  const { modelValue, id, items, ...settings } = props;
+  return settings;
+});
 const bindings = useBindings(settings);
+const value = computed({
+  get() {
+    return Number(props.modelValue);
+  },
+  set(value) {
+    emits('update:modelValue', value);
+  }
+});
+const length = computed(() => props.items.length);
+const capacity = computed(() => props.capacity);
+const currentCapacity = useCapacity(capacity);
+const { step, count } = usePagination({
+  value,
+  length,
+  capacity: currentCapacity,
+});
 </script>
 
 <template>
   <section
-    :style="{ '--count' : value }"
+    :style="{ '--step' : step }"
     v-bind="bindings"
     class="VCarousel"
   >
+    <input v-model="count">
     <div
       class="VCarousel-Stage"
     >
@@ -69,7 +93,7 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 
 <style>
 .VCarousel {
-  --count: 0;
+  --step: 0;
   --padding: 0;
   --getters: 16px;
   --capacity: 3;
@@ -95,7 +119,7 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 }
 
 .VCarousel-FrontStage {
-  --shift: calc(-1 * var(--count) * (100% + var(--getters)));
+  --shift: calc(-1 * var(--step) * (100% + var(--getters)));
   transform: translate3d(var(--shift), 0, 0);
   transition: var(--speed) linear;
   width: 100%;

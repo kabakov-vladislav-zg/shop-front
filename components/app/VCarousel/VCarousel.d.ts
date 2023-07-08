@@ -1,7 +1,8 @@
 export type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 type Justify = 'flex-start' | 'flex-end' | 'center';
-export type SettingValue = string | number | Partial<Record<Breakpoint, string | number>>;
+export type ResponsiveSettingValue = Partial<Record<Breakpoint, string | number>>;
+export type SettingValue = string | number | ResponsiveSettingValue;
 export type SettingName =
   | 'padding'
   | 'getters'
@@ -10,8 +11,8 @@ export type SettingName =
   | 'justify';
 
 export type Settings = Partial<Record<SettingName, SettingValue>>
-export interface Props {
-  value?: number
+export type Props = {
+  modelValue?: string | number
   id?: string | number
   items?: Array<object | Array<any>>
   padding?: SettingValue
@@ -19,4 +20,7 @@ export interface Props {
   capacity?: SettingValue
   speed?: SettingValue
   justify?: SettingValue
+}
+export type Emits = {
+  (e: 'update:modelValue', value: string | number): void
 }

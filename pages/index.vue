@@ -30,15 +30,15 @@
     md: 4,
     lg: 5,
   }
-  const padding = ref('');
+  const count = ref(2);
 </script>
 
 <template>
   <div class="">
     <UiCarousel
+      v-model="count"
       id="bg"
       :items="items"
-      :padding="padding"
       :capacity="capacity"
     >
       <template
@@ -50,7 +50,7 @@
         ></div>
       </template>
     </UiCarousel>
-    <input v-model="padding">
+    <input v-model="count">
   </div>
 </template>
 

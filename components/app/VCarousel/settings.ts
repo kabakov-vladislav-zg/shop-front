@@ -4,7 +4,7 @@ import { Settings, Props } from './VCarousel';
 export function useSettings(props : Props) : ComputedRef<Settings> {
   return computed(() => {
     const {
-      value,
+      modelValue,
       id,
       items,
       ...settings
