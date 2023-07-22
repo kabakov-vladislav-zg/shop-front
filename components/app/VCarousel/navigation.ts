@@ -4,7 +4,7 @@ export function useNavigation(itemsCount, capacity) {
   const innerStep = ref<number>(0);
   const maxStep = computed(() => toValue(itemsCount) - toValue(capacity));
   const innerPage = ref<number>(0);
-  const maxPage = computed(() => Math.floor(toValue(itemsCount) / toValue(capacity)));
+  const maxPage = computed(() => Math.ceil(toValue(maxStep) / toValue(capacity)));
   const setStep = (value : string | number) => {
     const max = toValue(maxStep);
     let currentStep = Number(value) || 0;

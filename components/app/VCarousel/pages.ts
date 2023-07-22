@@ -22,7 +22,7 @@ export function usePages(capacity : ComputedRef<SettingValue>, itemsCount : Comp
       for (let j = 0; j < states.length; j++) {
         const state = j < pagesLength;
         if (states[j] !== state) {
-          const className = `${state ? 'isDisplay' : 'isNone'}:${breakpoints[i]}`;
+          const className = `${state ? 'isVisible' : 'isHidden'}-${breakpoints[i]}`;
           if (typeof result[j] !== 'object') {
             result[j] = [];
           }

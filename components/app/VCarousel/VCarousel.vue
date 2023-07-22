@@ -6,8 +6,8 @@ import { withDefaults, computed, watch, watchEffect, ref, toValue } from 'vue';
 import { Props, Emits } from './VCarousel';
 import { useBindings } from './bindings';
 import { useCapacity } from './capacity';
-import { usePages } from './pages';
 import { useNavigation } from './navigation';
+import { usePages } from '~/components/app/VCarousel/pages';
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: 0,
@@ -16,16 +16,20 @@ const props = withDefaults(defineProps<Props>(), {
   capacity: 1,
   items: () => [],
 });
-const emit = defineEmits<Emits>()
+
 const settings = computed(() => {
-  const { modelValue, page, id, items, ...settings } = props;
-  return settings;
+  const { padding, getters, capacity, speed, justify } = props;
+  return { padding, getters, capacity, speed, justify };
 });
-const cssSettings = useBindings(settings);
+const bindings = useBindings(settings);
+
 const itemsCount = computed(() => props.items.length);
-const capacitySetting = computed(() => settings.value.capacity);
-const capacity = useCapacity(capacitySetting);
-const pages = usePages(capacitySetting, itemsCount);
+const capacity = computed(() => settings.value.capacity);
+const currentCapacity = useCapacity(capacity);
+const { step, maxStep, setStep, page, maxPage, setPage } = useNavigation(itemsCount, currentCapacity);
+const pages = usePages(capacity, itemsCount);
+
+const emit = defineEmits<Emits>();
 const externalStep = computed({
   get() {
     return props.modelValue;
@@ -42,7 +46,6 @@ const externalPage = computed({
     emit('update:page', value);
   }
 });
-const { step, maxStep, setStep, page, maxPage, setPage } = useNavigation(itemsCount, capacity);
 watch(externalStep, (current) => {
   const { step, page } = setStep(current);
   externalStep.value = step;
@@ -64,7 +67,7 @@ watch(page, (current) => {
 <template>
   <section
     :style="{ '--step' : step }"
-    v-bind="cssSettings"
+    v-bind="bindings"
     class="VCarousel"
   >
     <slot
@@ -96,14 +99,16 @@ watch(page, (current) => {
         <div>
           maxPage: {{ maxPage }}
         </div>
-        <div class="flex">
-          <div
+        <div class="">
+          <button
             v-for="(page, i) in pages"
             :key="i"
             :class="page"
-            class="p-4 mx-1 bg-red-400"
+            class="mx-1 bg-red-400 px-3"
             @click="setPage(i)"
-          ></div>
+          >
+            {{ i }}
+          </button>
         </div>
       </div>
     </slot>
@@ -139,8 +144,20 @@ $screens: (
 );
 $settings: "padding", "getters", "capacity", "speed", "justify", ;
 
+.isVisible {
+  display: block!important;
+}
+.isHidden {
+  display: none!important;
+}
 @each $breakpoint, $minWidth in $screens {
   @media (min-width: $minWidth) {
+    .isVisible-#{$breakpoint} {
+      display: block!important;
+    }
+    .isHidden-#{$breakpoint} {
+      display: none!important;
+    }
     @each $setting in $settings {
       [style*="--#{$setting}-#{$breakpoint}"] {
         --#{$setting}: var(--#{$setting}-#{$breakpoint})!important;
