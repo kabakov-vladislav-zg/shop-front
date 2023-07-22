@@ -1,5 +1,5 @@
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
-import { computed, WritableComputedRef, watch } from 'vue';
+import { computed } from 'vue';
 import { SettingValue, ResponsiveSettingValue, Breakpoint } from './VCarousel';
 
 function getBreakpointsList(settings : ResponsiveSettingValue) : Record<string, number> {

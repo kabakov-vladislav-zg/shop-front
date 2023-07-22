@@ -13,6 +13,7 @@ export type SettingName =
 export type Settings = Partial<Record<SettingName, SettingValue>>
 export type Props = {
   modelValue?: string | number
+  page?: string | number
   id?: string | number
   items?: Array<object | Array<any>>
   padding?: SettingValue
@@ -22,5 +23,6 @@ export type Props = {
   justify?: SettingValue
 }
 export type Emits = {
-  (e: 'update:modelValue', value: string | number): void
+  'update:modelValue': [value: string | number],
+  'update:page': [value: string | number],
 }

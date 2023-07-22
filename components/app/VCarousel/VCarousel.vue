@@ -2,49 +2,111 @@
   setup
   lang="ts"
 >
-import { withDefaults, computed } from 'vue';
+import { withDefaults, computed, watch, watchEffect, ref, toValue } from 'vue';
 import { Props, Emits } from './VCarousel';
 import { useBindings } from './bindings';
-import { usePagination } from './pagination';
 import { useCapacity } from './capacity';
+import { usePages } from './pages';
+import { useNavigation } from './navigation';
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: 0,
+  page: 0,
   id: 'id',
   capacity: 1,
   items: () => [],
 });
-const emits = defineEmits<Emits>()
+const emit = defineEmits<Emits>()
 const settings = computed(() => {
-  const { modelValue, id, items, ...settings } = props;
+  const { modelValue, page, id, items, ...settings } = props;
   return settings;
 });
-const bindings = useBindings(settings);
-const value = computed({
+const cssSettings = useBindings(settings);
+const itemsCount = computed(() => props.items.length);
+const capacitySetting = computed(() => settings.value.capacity);
+const capacity = useCapacity(capacitySetting);
+const pages = usePages(capacitySetting, itemsCount);
+const externalStep = computed({
   get() {
-    return Number(props.modelValue);
+    return props.modelValue;
   },
   set(value) {
-    emits('update:modelValue', value);
+    emit('update:modelValue', value);
   }
 });
-const length = computed(() => props.items.length);
-const capacity = computed(() => props.capacity);
-const currentCapacity = useCapacity(capacity);
-const { step, count } = usePagination({
-  value,
-  length,
-  capacity: currentCapacity,
+const externalPage = computed({
+  get() {
+    return props.page;
+  },
+  set(value) {
+    emit('update:page', value);
+  }
+});
+const { step, maxStep, setStep, page, maxPage, setPage } = useNavigation(itemsCount, capacity);
+watch(externalStep, (current) => {
+  const { step, page } = setStep(current);
+  externalStep.value = step;
+  externalPage.value = page;
+}, { immediate: true });
+watch(externalPage, (current) => {
+  const { step, page } = setPage(current);
+  externalStep.value = step;
+  externalPage.value = page;
+}, { immediate: true });
+watch(step, (current) => {
+  externalStep.value = current;
+});
+watch(page, (current) => {
+  externalPage.value = current;
 });
 </script>
 
 <template>
   <section
     :style="{ '--step' : step }"
-    v-bind="bindings"
+    v-bind="cssSettings"
     class="VCarousel"
   >
-    <input v-model="count">
+    <slot
+      name="nav"
+      v-bind="{ step, setStep, maxStep, items }"
+    >
+
+      <div class="">
+        <button
+          @click="setStep(step - 1)"
+          class="mr-3"
+        >
+          назад
+        </button>
+        <button
+          @click="setStep(step + 1)"
+        >
+          вперед
+        </button>
+        <div>
+          step: {{ step }}
+        </div>
+        <div>
+          maxStep: {{ maxStep }}
+        </div>
+        <div>
+          page: {{ page }}
+        </div>
+        <div>
+          maxPage: {{ maxPage }}
+        </div>
+        <div class="flex">
+          <div
+            v-for="(page, i) in pages"
+            :key="i"
+            :class="page"
+            class="p-4 mx-1 bg-red-400"
+            @click="setPage(i)"
+          ></div>
+        </div>
+      </div>
+    </slot>
     <div
       class="VCarousel-Stage"
     >
@@ -52,16 +114,13 @@ const { step, count } = usePagination({
         <div
           class="VCarousel-FrontStage"
         >
-          <slot>
+          <slot name="items">
             <div
               v-for="item in items"
               :key="item[id]"
               class="VCarousel-Item"
             >
-              <slot
-                name="item"
-                :item="item"
-              ></slot>
+              <slot :item="item" />
             </div>
           </slot>
         </div>
