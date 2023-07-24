@@ -8,10 +8,12 @@ import { useBindings } from './bindings';
 import { useCapacity } from './capacity';
 import { useNavigation } from './navigation';
 import { usePages } from '~/components/app/VCarousel/pages';
+import { useDragAndDrop } from '~/components/app/VCarousel/dragAndDrop';
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: 0,
   page: 0,
+  draggable: true,
   id: 'id',
   capacity: 1,
   items: () => [],
@@ -26,7 +28,14 @@ const bindings = useBindings(settings);
 const itemsCount = computed(() => props.items.length);
 const capacity = computed(() => settings.value.capacity);
 const currentCapacity = useCapacity(capacity);
-const { step, maxStep, setStep, page, maxPage, setPage } = useNavigation(itemsCount, currentCapacity);
+const {
+  step,
+  maxStep,
+  setStep,
+  page,
+  maxPage,
+  setPage,
+} = useNavigation({ itemsCount, currentCapacity });
 const pages = usePages(capacity, itemsCount);
 
 const emit = defineEmits<Emits>();
@@ -62,67 +71,97 @@ watch(step, (current) => {
 watch(page, (current) => {
   externalPage.value = current;
 });
+
+const stageBack = ref<HTMLElement | null>(null);
+const stageFront = ref<HTMLElement | null>(null);
+const stageItems = ref<Array<HTMLElement> | []>([]);
+const {
+  events: dragAndDropEvents,
+  classes: dragAndDropClasses,
+  styles: dragAndDropStyles,
+  step: dragAndDropStep,
+} = useDragAndDrop({
+  stageBack,
+  stageFront,
+  stageItems,
+  currentCapacity,
+});
+watch(dragAndDropStep, (value) => {
+  setStep(value);
+});
 </script>
 
 <template>
   <section
-    :style="{ '--step' : step }"
     v-bind="bindings"
     class="VCarousel"
   >
-    <slot
-      name="nav"
-      v-bind="{ step, setStep, maxStep, items }"
-    >
+    <div>
+      <slot
+        name="nav"
+        v-bind="{ step, setStep, maxStep, items }"
+      >
 
-      <div class="">
-        <button
-          @click="setStep(step - 1)"
-          class="mr-3"
-        >
-          назад
-        </button>
-        <button
-          @click="setStep(step + 1)"
-        >
-          вперед
-        </button>
-        <div>
-          step: {{ step }}
-        </div>
-        <div>
-          maxStep: {{ maxStep }}
-        </div>
-        <div>
-          page: {{ page }}
-        </div>
-        <div>
-          maxPage: {{ maxPage }}
-        </div>
         <div class="">
           <button
-            v-for="(page, i) in pages"
-            :key="i"
-            :class="page"
-            class="mx-1 bg-red-400 px-3"
-            @click="setPage(i)"
+            @click="setStep(step - 1)"
+            class="mr-3"
           >
-            {{ i }}
+            назад
           </button>
+          <button
+            @click="setStep(step + 1)"
+          >
+            вперед
+          </button>
+          <div>
+            step: {{ step }}
+          </div>
+          <div>
+            maxStep: {{ maxStep }}
+          </div>
+          <div>
+            page: {{ page }}
+          </div>
+          <div>
+            maxPage: {{ maxPage }}
+          </div>
+          <div class="">
+            <button
+              v-for="(page, i) in pages"
+              :key="i"
+              :class="page"
+              class="mx-1 bg-red-400 px-3"
+              @click="setPage(i)"
+            >
+              {{ i }}
+            </button>
+          </div>
         </div>
-      </div>
-    </slot>
+      </slot>
+    </div>
     <div
       class="VCarousel-Stage"
+      v-on="{ ...dragAndDropEvents }"
     >
-      <div class="VCarousel-BackStage">
+      <div
+        ref="stageBack"
+        class="VCarousel-BackStage"
+      >
         <div
+          ref="stageFront"
+          :style="{
+            '--step' : step,
+            ...dragAndDropStyles
+          }"
+          :class="{ ...dragAndDropClasses }"
           class="VCarousel-FrontStage"
         >
           <slot name="items">
             <div
               v-for="item in items"
               :key="item[id]"
+              ref="stageItems"
               class="VCarousel-Item"
             >
               <slot :item="item" />
@@ -169,11 +208,10 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 
 <style>
 .VCarousel {
-  --step: 0;
   --padding: 0;
   --getters: 16px;
   --capacity: 3;
-  --speed: 0.5s;
+  --speed: 0.25s;
   --justify: flex-start;
   display: flex;
   flex-wrap: wrap;
@@ -195,16 +233,17 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 }
 
 .VCarousel-FrontStage {
+  --step: 0;
   --shift: calc(-1 * var(--step) * (100% + var(--getters)));
   transform: translate3d(var(--shift), 0, 0);
-  transition: var(--speed) linear;
+  transition: transform var(--speed) ease 0s;
   width: 100%;
   overflow: visible;
   display: flex;
   position: relative;
 
   &.isDraggable {
-    touch-action: pan-y pinch-zoom;
+    touch-action: manipulation;
   }
 
   &.isDragged {
