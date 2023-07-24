@@ -14,6 +14,7 @@ export type Settings = Partial<Record<SettingName, SettingValue>>
 export type Props = {
   modelValue?: string | number
   page?: string | number
+  draggable?: boolean
   id?: string | number
   items?: Array<object | Array<any>>
   padding?: SettingValue
