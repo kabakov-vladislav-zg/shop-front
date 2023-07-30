@@ -114,7 +114,9 @@ export function useDragAndDrop({
   const isDragged = ref<boolean>(false);
   const dragStep = ref<number>(0);
   const dragShift = ref<number>(0);
-  const pointerdown = ({ clientX } : PointerEvent) => {
+  const pointerdown = (e : PointerEvent) => {
+    console.log(e)
+    const { clientX } = e;
     const stage = {
       back: toValue(stageBack),
       front: toValue(stageFront),
@@ -137,7 +139,7 @@ export function useDragAndDrop({
       }
     });
   };
-  const styles =computed(() => {
+  const styles = computed(() => {
     const shift = toValue(dragShift);
     const transform = shift
       ? `translateX(${shift}px)`

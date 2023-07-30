@@ -35,6 +35,7 @@ const {
   page,
   maxPage,
   setPage,
+  classes: navigationClasses,
 } = useNavigation({ itemsCount, currentCapacity });
 const pages = usePages(capacity, itemsCount);
 
@@ -56,19 +57,23 @@ const externalPage = computed({
   }
 });
 watch(externalStep, (current) => {
-  const { step, page } = setStep(current);
-  externalStep.value = step;
-  externalPage.value = page;
+  if (current === step.value) return;
+  setStep(current);
+  externalStep.value = step.value;
+  externalPage.value = page.value;
 }, { immediate: true });
 watch(externalPage, (current) => {
-  const { step, page } = setPage(current);
-  externalStep.value = step;
-  externalPage.value = page;
+  if (current === page.value) return;
+  setPage(current);
+  externalStep.value = step.value;
+  externalPage.value = page.value;
 }, { immediate: true });
 watch(step, (current) => {
+  if (current === externalStep.value) return;
   externalStep.value = current;
 });
 watch(page, (current) => {
+  if (current === externalPage.value) return;
   externalPage.value = current;
 });
 
@@ -154,7 +159,10 @@ watch(dragAndDropStep, (value) => {
             '--step' : step,
             ...dragAndDropStyles
           }"
-          :class="{ ...dragAndDropClasses }"
+          :class="{
+            ...navigationClasses,
+            ...dragAndDropClasses
+          }"
           class="VCarousel-FrontStage"
         >
           <slot name="items">
@@ -236,7 +244,9 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
   --step: 0;
   --shift: calc(-1 * var(--step) * (100% + var(--getters)));
   transform: translate3d(var(--shift), 0, 0);
-  transition: transform var(--speed) ease 0s;
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+  transition-delay: 0s;
   width: 100%;
   overflow: visible;
   display: flex;
@@ -248,6 +258,12 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 
   &.isDragged {
     transition: none;
+  }
+  &.isTransition-step {
+    transition-duration: 1.25s;
+  }
+  &.isTransition-page {
+    transition-duration: 5.25s;
   }
 }
 

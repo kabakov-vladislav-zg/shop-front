@@ -11,44 +11,51 @@ export function useNavigation({
   const maxStep = computed(() => toValue(itemsCount) - toValue(currentCapacity));
   const innerPage = ref<number>(0);
   const maxPage = computed(() => Math.ceil(toValue(maxStep) / toValue(currentCapacity)));
-  const setStep = (value : string | number) => {
-    const max = toValue(maxStep);
-    let currentStep = Number(value) || 0;
-    let currentPage = Math.floor(currentStep / toValue(currentCapacity));
-    if (currentStep >= max) {
-      currentStep = max;
-      currentPage = Math.ceil(currentStep / toValue(currentCapacity));
-    } else if (currentStep < 0) {
-      currentStep = 0;
-      currentPage = 0;
-    }
-    innerStep.value = currentStep;
-    innerPage.value = currentPage
-    return {
-      step: currentStep,
-      page: currentPage,
+  const isPageTransition = ref<boolean>(false);
+  const setPosition = (step : number) => {
+    const position = {
+      step: toValue(innerStep),
+      page: toValue(innerPage),
     };
+    if (step === toValue(innerStep)) {
+      return position;
+    }
+    const max = toValue(maxStep);
+    if (step >= max) {
+      position.step = max;
+      position.page = Math.ceil(step / toValue(currentCapacity));
+    } else if (step < 0) {
+      position.step = 0;
+      position.page = 0;
+    } else {
+      position.step = step;
+      position.page = Math.floor(step / toValue(currentCapacity));
+    }
+    innerStep.value = position.step;
+    innerPage.value = position.page
+  };
+  const setStep = (value : string | number) => {
+    isPageTransition.value = false;
+    const step = Number(value) || 0;
+    setPosition(step);
   };
   const setPage = (value : string | number) => {
-    const currentPage = Number(value) || 0;
-    if (currentPage === toValue(innerPage)) {
-      return {
-        step: toValue(innerStep),
-        page: toValue(innerPage),
-      }
-    } else {
-      return setStep(currentPage * toValue(currentCapacity));
-    }
+    isPageTransition.value = true;
+    const step = (Number(value) || 0) * toValue(currentCapacity);
+    setPosition(step);
   };
-  const step = computed(() => toValue(innerStep));
-  const page = computed(() => toValue(innerPage));
-
+  const classes = computed(() => {
+    return toValue(isPageTransition)
+      ? { 'isTransition-page': true }
+      : { 'isTransition-step': true };
+  });
   return {
-    step,
+    step: readonly(innerStep),
     maxStep,
     setStep,
-    page,
+    page: readonly(innerPage),
     maxPage,
     setPage,
+    classes,
   }
 }
