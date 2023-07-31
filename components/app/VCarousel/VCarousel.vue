@@ -2,7 +2,7 @@
   setup
   lang="ts"
 >
-import { withDefaults, computed, watch, watchEffect, ref, toValue } from 'vue';
+import { computed, watch, ref } from 'vue';
 import { Props, Emits } from './VCarousel';
 import { useBindings } from './bindings';
 import { useCapacity } from './capacity';
@@ -18,7 +18,6 @@ const props = withDefaults(defineProps<Props>(), {
   capacity: 1,
   items: () => [],
 });
-
 const settings = computed(() => {
   const { padding, getters, capacity, speed, justify } = props;
   return { padding, getters, capacity, speed, justify };
@@ -98,6 +97,9 @@ watch(dragAndDropStep, (value) => {
 
 <template>
   <section
+    :style="{
+      '--count' : itemsCount,
+    }"
     v-bind="bindings"
     class="VCarousel"
   >
@@ -147,7 +149,6 @@ watch(dragAndDropStep, (value) => {
     </div>
     <div
       class="VCarousel-Stage"
-      v-on="{ ...dragAndDropEvents }"
     >
       <div
         ref="stageBack"
@@ -157,11 +158,9 @@ watch(dragAndDropStep, (value) => {
           ref="stageFront"
           :style="{
             '--step' : step,
-            ...dragAndDropStyles
           }"
           :class="{
             ...navigationClasses,
-            ...dragAndDropClasses
           }"
           class="VCarousel-FrontStage"
         >
@@ -189,7 +188,7 @@ $screens: (
   "xl": "1280px",
   "2xl": "1536px"
 );
-$settings: "padding", "getters", "capacity", "speed", "justify", ;
+$settings: "padding", "getters", "capacity", "speedstep", "speedpage", "justify", ;
 
 .isVisible {
   display: block!important;
@@ -216,11 +215,13 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 
 <style>
 .VCarousel {
+  --step: 0;
+  --count: 0;
   --padding: 0;
   --getters: 16px;
   --capacity: 3;
-  --speed: 0.25s;
-  --justify: flex-start;
+  --speedstep: 0.25s;
+  --speedpage: 1.25s;
   display: flex;
   flex-wrap: wrap;
 }
@@ -228,26 +229,18 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
 .VCarousel-Stage {
   overflow-x: hidden;
   width: 100%;
-  padding: var(--padding);
-  display: grid;
-  justify-items: var(--justify);
 }
 
 .VCarousel-BackStage {
-  --visible-items-width: calc(100% - var(--getters) * (var(--capacity) - 1));
-  width: calc(var(--visible-items-width) / var(--capacity));
-  min-width: 0;
-  max-width: 100%;
+  margin-left: calc(-1 * var(--getters));
 }
 
 .VCarousel-FrontStage {
-  --step: 0;
-  --shift: calc(-1 * var(--step) * (100% + var(--getters)));
-  transform: translate3d(var(--shift), 0, 0);
+  width: calc(100% / var(--capacity) * var(--count));
+  transform: translate3d(calc(-1 * var(--step) * 100% / var(--count)), 0, 0);
   transition-property: transform;
-  transition-timing-function: ease-in-out;
+  transition-timing-function: ease;
   transition-delay: 0s;
-  width: 100%;
   overflow: visible;
   display: flex;
   position: relative;
@@ -260,16 +253,16 @@ $settings: "padding", "getters", "capacity", "speed", "justify", ;
     transition: none;
   }
   &.isTransition-step {
-    transition-duration: 1.25s;
+    transition-duration: var(--speedstep);
   }
   &.isTransition-page {
-    transition-duration: 5.25s;
+    transition-duration: var(--speedpage);
   }
 }
 
 .VCarousel-Item {
   flex-shrink: 0;
-  width: 100%;
-  margin-right: var(--getters);
+  flex-grow: 1;
+  padding-left: var(--getters);
 }
 </style>
