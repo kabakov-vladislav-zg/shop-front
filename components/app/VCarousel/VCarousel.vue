@@ -3,30 +3,58 @@
   lang="ts"
 >
 import { computed, watch, ref } from 'vue';
-import { Props, Emits } from './VCarousel';
-import { useBindings } from './bindings';
+import { useCssSettings } from './cssSettings';
+import { useControls } from './controls';
+import { useDots } from './dots';
 import { useCapacity } from './capacity';
 import { useNavigation } from './navigation';
-import { usePages } from '~/components/app/VCarousel/pages';
-import { useDragAndDrop } from '~/components/app/VCarousel/dragAndDrop';
+import { useDragAndDrop } from './dragAndDrop';
+import { Breakpoint } from '~/utils/breakpoints';
 
+type ControlsOption = boolean | Partial<Record<Breakpoint, boolean>>;
+type SettingsOption = string | number | undefined | Partial<Record<Breakpoint, string | number | undefined>>;
+type Props = {
+  items?: Array<object>
+  modelValue?: string | number
+  page?: string | number
+  id?: string
+  draggable?: ControlsOption
+  dots?: ControlsOption
+  nav?: ControlsOption
+  capacity?: SettingsOption
+  padding?: SettingsOption
+  getters?: SettingsOption
+  speedStep?: SettingsOption
+  speedPage?: SettingsOption
+};
+type Emit = {
+  (e: 'update:modelValue', value: number): void
+  (e: 'update:page', value: number): void
+}
 const props = withDefaults(defineProps<Props>(), {
+  items: () => [],
   modelValue: 0,
   page: 0,
   draggable: true,
-  id: 'id',
+  dots: true,
+  nav: true,
   capacity: 1,
-  items: () => [],
 });
-const settings = computed(() => {
-  const { padding, getters, capacity, speed, justify } = props;
-  return { padding, getters, capacity, speed, justify };
-});
-const bindings = useBindings(settings);
+const emit = defineEmits<Emit>();
 
+const { styles: cssSettings } = useCssSettings(() => {
+  const { capacity, padding, getters, speedStep, speedPage } = props;
+  return { capacity, padding, getters, speedStep, speedPage };
+});
 const itemsCount = computed(() => props.items.length);
-const capacity = computed(() => settings.value.capacity);
-const currentCapacity = useCapacity(capacity);
+const capacityOptions = computed(() => props.capacity);
+const dotsOptions = computed(() => props.dots);
+const { 
+  isShow: isShowDots,
+  classes: dotsControlsClasses,
+} = useControls(dotsOptions);
+const { dots } = useDots(isShowDots, capacityOptions, itemsCount);
+const capacityCurrent = useCapacity(capacityOptions);
 const {
   step,
   maxStep,
@@ -35,26 +63,11 @@ const {
   maxPage,
   setPage,
   classes: navigationClasses,
-} = useNavigation({ itemsCount, currentCapacity });
-const pages = usePages(capacity, itemsCount);
+} = useNavigation({ itemsCount, capacityCurrent });
 
-const emit = defineEmits<Emits>();
-const externalStep = computed({
-  get() {
-    return props.modelValue;
-  },
-  set(value) {
-    emit('update:modelValue', value);
-  }
-});
-const externalPage = computed({
-  get() {
-    return props.page;
-  },
-  set(value) {
-    emit('update:page', value);
-  }
-});
+const externalStep = useVModel(props, 'modelValue', emit);
+const externalPage = useVModel(props, 'page', emit);
+
 watch(externalStep, (current) => {
   if (current === step.value) return;
   setStep(current);
@@ -76,31 +89,31 @@ watch(page, (current) => {
   externalPage.value = current;
 });
 
-const stageBack = ref<HTMLElement | null>(null);
-const stageFront = ref<HTMLElement | null>(null);
-const stageItems = ref<Array<HTMLElement> | []>([]);
-const {
-  events: dragAndDropEvents,
-  classes: dragAndDropClasses,
-  styles: dragAndDropStyles,
-  step: dragAndDropStep,
-} = useDragAndDrop({
-  stageBack,
-  stageFront,
-  stageItems,
-  currentCapacity,
-});
-watch(dragAndDropStep, (value) => {
-  setStep(value);
-});
+// const stageBack = ref<HTMLElement | null>(null);
+// const stageFront = ref<HTMLElement | null>(null);
+// const stageItems = ref<Array<HTMLElement> | []>([]);
+// const {
+//   events: dragEvents,
+//   classes: dragClasses,
+//   styles: dragStyles,
+//   step: dragStep,
+// } = useDragAndDrop({
+//   stageBack,
+//   stageFront,
+//   stageItems,
+//   currentCapacity,
+// });
+// watch(dragStep, (value) => {
+//   setStep(value);
+// });
 </script>
 
 <template>
   <section
     :style="{
       '--count' : itemsCount,
+      ...cssSettings
     }"
-    v-bind="bindings"
     class="VCarousel"
   >
     <div>
@@ -133,11 +146,14 @@ watch(dragAndDropStep, (value) => {
           <div>
             maxPage: {{ maxPage }}
           </div>
-          <div class="">
+          <div
+            v-if="isShowDots"
+            :class="dotsControlsClasses"
+          >
             <button
-              v-for="(page, i) in pages"
+              v-for="(dot, i) in dots"
               :key="i"
-              :class="page"
+              :class="dot"
               class="mx-1 bg-red-400 px-3"
               @click="setPage(i)"
             >
@@ -181,28 +197,26 @@ watch(dragAndDropStep, (value) => {
 </template>
 
 <style lang="scss">
-$screens: (
-  "sm": "640px",
-  "md": "768px",
-  "lg": "1024px",
-  "xl": "1280px",
-  "2xl": "1536px"
-);
-$settings: "padding", "getters", "capacity", "speedstep", "speedpage", "justify", ;
+@use '~/utils/breakpoints';
+$settings: "padding", "getters", "capacity", "speedstep", "speedpage";
 
-.isVisible {
-  display: block!important;
+.VCarousel-Controls {
+  &.isVisible {
+    display: block!important;
+  }
+  &.isHidden {
+    display: none!important;
+  }
 }
-.isHidden {
-  display: none!important;
-}
-@each $breakpoint, $minWidth in $screens {
+@each $breakpoint, $minWidth in breakpoints.$screens {
   @media (min-width: $minWidth) {
-    .isVisible-#{$breakpoint} {
-      display: block!important;
-    }
-    .isHidden-#{$breakpoint} {
-      display: none!important;
+    .VCarousel-Controls {
+      &.isVisible-#{$breakpoint} {
+        display: block!important;
+      }
+      &.isHidden-#{$breakpoint} {
+        display: none!important;
+      }
     }
     @each $setting in $settings {
       [style*="--#{$setting}-#{$breakpoint}"] {

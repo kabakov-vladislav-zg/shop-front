@@ -1,16 +1,16 @@
-import { computed, ref, toValue, watch, ComputedRef, WritableComputedRef } from 'vue';
+import { computed, ref, toValue, ComputedRef } from 'vue';
 
 export function useNavigation({
   itemsCount,
-  currentCapacity,
+  capacityCurrent,
 } : {
   itemsCount : ComputedRef<number>,
-  currentCapacity : ComputedRef<number>,
+  capacityCurrent : ComputedRef<number>,
 }) {
   const innerStep = ref<number>(0);
-  const maxStep = computed(() => toValue(itemsCount) - toValue(currentCapacity));
+  const maxStep = computed(() => toValue(itemsCount) - toValue(capacityCurrent));
   const innerPage = ref<number>(0);
-  const maxPage = computed(() => Math.ceil(toValue(maxStep) / toValue(currentCapacity)));
+  const maxPage = computed(() => Math.ceil(toValue(maxStep) / toValue(capacityCurrent)));
   const isPageTransition = ref<boolean>(false);
   const setPosition = (step : number) => {
     const position = {
@@ -23,13 +23,13 @@ export function useNavigation({
     const max = toValue(maxStep);
     if (step >= max) {
       position.step = max;
-      position.page = Math.ceil(step / toValue(currentCapacity));
+      position.page = Math.ceil(step / toValue(capacityCurrent));
     } else if (step < 0) {
       position.step = 0;
       position.page = 0;
     } else {
       position.step = step;
-      position.page = Math.floor(step / toValue(currentCapacity));
+      position.page = Math.floor(step / toValue(capacityCurrent));
     }
     innerStep.value = position.step;
     innerPage.value = position.page
@@ -41,7 +41,7 @@ export function useNavigation({
   };
   const setPage = (value : string | number) => {
     isPageTransition.value = true;
-    const step = (Number(value) || 0) * toValue(currentCapacity);
+    const step = (Number(value) || 0) * toValue(capacityCurrent);
     setPosition(step);
   };
   const classes = computed(() => {
