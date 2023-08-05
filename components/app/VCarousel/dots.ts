@@ -64,7 +64,7 @@ const getDots = (optionsMatrix: [Breakpoint, number][]) => {
  /**
    * Reactive array of dots classes.
    * @param isShowDots - Whether to display the dots panel.
-   * @param capacityOptions - Capacity per breakpoint.
+   * @param capacityOptions - Capacity or capacity per breakpoint.
    * @param itemsCount - Carousel items quantity.
    */
 export function useDots(
