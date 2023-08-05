@@ -6,10 +6,10 @@ import { computed, watch, ref } from 'vue';
 import { useCssSettings } from './cssSettings';
 import { useControls } from './controls';
 import { useDots } from './dots';
-import { useCapacity } from './capacity';
+import { useCurrentSetting } from './currentSetting';
 import { useNavigation } from './navigation';
 import { useDragAndDrop } from './dragAndDrop';
-import { Breakpoint } from '~/utils/breakpoints';
+import { Breakpoint, breakpoints } from '~/utils/breakpoints';
 
 type ControlsOption = boolean | Partial<Record<Breakpoint, boolean>>;
 type SettingsOption = string | number | undefined | Partial<Record<Breakpoint, string | number | undefined>>;
@@ -30,8 +30,8 @@ type Props = {
 type Emit = {
   (e: 'update:modelValue', value: number): void
   (e: 'update:page', value: number): void
-}
-const props = withDefaults(defineProps<Props>(), {
+};
+const defaultProps = {
   items: () => [],
   modelValue: 0,
   page: 0,
@@ -39,7 +39,8 @@ const props = withDefaults(defineProps<Props>(), {
   dots: true,
   nav: true,
   capacity: 1,
-});
+};
+const props = withDefaults(defineProps<Props>(), defaultProps);
 const emit = defineEmits<Emit>();
 
 const { styles: cssSettings } = useCssSettings(() => {
@@ -54,7 +55,14 @@ const {
   classes: dotsControlsClasses,
 } = useControls(dotsOptions);
 const { dots } = useDots(isShowDots, capacityOptions, itemsCount);
-const capacityCurrent = useCapacity(capacityOptions);
+const { current: getCurrentBreakpoints } = useBreakpoints(breakpoints.object);
+const currentBreakpoints = getCurrentBreakpoints() as ComputedRef<Breakpoint[]>;
+const { current: capacityCurrent } = useCurrentSetting({
+  options: capacityOptions,
+  defaultOption: defaultProps.capacity,
+  currentBreakpoints: currentBreakpoints,
+  format: (value) => Number(value),
+});
 const {
   step,
   maxStep,
