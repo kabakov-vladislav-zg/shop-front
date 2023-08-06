@@ -31,7 +31,7 @@ type Emit = {
   (e: 'update:modelValue', value: number): void
   (e: 'update:page', value: number): void
 };
-const defaultProps = {
+const props = withDefaults(defineProps<Props>(), {
   items: () => [],
   modelValue: 0,
   page: 0,
@@ -39,62 +39,46 @@ const defaultProps = {
   dots: true,
   nav: true,
   capacity: 1,
-};
-const props = withDefaults(defineProps<Props>(), defaultProps);
+});
 const emit = defineEmits<Emit>();
 
 const { styles: cssSettings } = useCssSettings(() => {
   const { capacity, padding, getters, speedStep, speedPage } = props;
   return { capacity, padding, getters, speedStep, speedPage };
 });
+
 const itemsCount = computed(() => props.items.length);
 const capacityOptions = computed(() => props.capacity);
+
 const dotsOptions = computed(() => props.dots);
-const { 
+const {
   isShow: isShowDots,
   classes: dotsControlsClasses,
 } = useControls(dotsOptions);
+
 const { dots } = useDots(isShowDots, capacityOptions, itemsCount);
+
 const { current: getCurrentBreakpoints } = useBreakpoints(breakpoints.object);
 const currentBreakpoints = getCurrentBreakpoints() as ComputedRef<Breakpoint[]>;
-const { current: capacityCurrent } = useCurrentSetting({
+
+const { setting: capacityCurrent } = useCurrentSetting({
   options: capacityOptions,
-  defaultOption: defaultProps.capacity,
+  defaultOption: 1,
   currentBreakpoints: currentBreakpoints,
   format: (value) => Number(value),
 });
+
 const {
   step,
   maxStep,
-  setStep,
   page,
   maxPage,
-  setPage,
   classes: navigationClasses,
-} = useNavigation({ itemsCount, capacityCurrent });
-
-const externalStep = useVModel(props, 'modelValue', emit);
-const externalPage = useVModel(props, 'page', emit);
-
-watch(externalStep, (current) => {
-  if (current === step.value) return;
-  setStep(current);
-  externalStep.value = step.value;
-  externalPage.value = page.value;
-}, { immediate: true });
-watch(externalPage, (current) => {
-  if (current === page.value) return;
-  setPage(current);
-  externalStep.value = step.value;
-  externalPage.value = page.value;
-}, { immediate: true });
-watch(step, (current) => {
-  if (current === externalStep.value) return;
-  externalStep.value = current;
-});
-watch(page, (current) => {
-  if (current === externalPage.value) return;
-  externalPage.value = current;
+} = useNavigation({
+  itemsCount,
+  capacityCurrent,
+  externalStep: useVModel(props, 'modelValue', emit),
+  externalPage: useVModel(props, 'page', emit),
 });
 
 // const stageBack = ref<HTMLElement | null>(null);
@@ -127,18 +111,17 @@ watch(page, (current) => {
     <div>
       <slot
         name="nav"
-        v-bind="{ step, setStep, maxStep, items }"
+        v-bind="{ step, maxStep, items }"
       >
-
         <div class="">
           <button
-            @click="setStep(step - 1)"
+            @click="step -= 1"
             class="mr-3"
           >
             назад
           </button>
           <button
-            @click="setStep(step + 1)"
+            @click="step += 1"
           >
             вперед
           </button>
@@ -163,7 +146,7 @@ watch(page, (current) => {
               :key="i"
               :class="dot"
               class="mx-1 bg-red-400 px-3"
-              @click="setPage(i)"
+              @click="page = i"
             >
               {{ i }}
             </button>

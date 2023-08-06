@@ -24,10 +24,13 @@ const getOptionsEntries = (options: Options) => {
 const getClassList = (options: Partial<Record<Breakpoint, boolean>>) => {
   const points = breakpoints.keys.filter((point) => point in options);
   const states: boolean[] = new Array(points.length).fill(true);
-  const classes: string[] = [];
+  const classes: string[] = ['VCarousel-Controls'];
   points.forEach((point, index) => {
     const option = options[point] as boolean;
-    if (states[index - 1] !== option) {
+    const currentStatus = (index === 0)
+      ? true
+      : states[index - 1];
+    if (currentStatus !== option) {
       const className = option ? 'isVisible' : 'isHidden';
       const classPoint = point === 'xs' ? '' : `-${point}`;
       classes.push(className + classPoint);

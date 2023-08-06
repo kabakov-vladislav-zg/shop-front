@@ -13,19 +13,19 @@ export function useCurrentSetting<T>({
     format: (value: any) => T,
   }
 ) {
-  const current = computed(() => {
-    let current: T;
+  const setting = computed(() => {
+    let setting: T;
     const currentOptions = toValue(options);
     const currentBreakpoint = toValue(currentBreakpoints);
     if (typeof currentOptions === 'object') {
       const breakpoint = currentBreakpoint
         .filter((breakpoint) => breakpoint in currentOptions)
         .pop();
-      current = currentOptions[breakpoint || 'xs'];
+      setting = currentOptions[breakpoint || 'xs'];
     } else {
-      current = currentOptions;
+      setting = currentOptions;
     }
-    return format(current || defaultOption);
+    return format(setting || defaultOption);
   });
-  return { current };
+  return { setting };
 }

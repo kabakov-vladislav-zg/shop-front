@@ -1,61 +1,88 @@
-import { computed, ref, toValue, ComputedRef } from 'vue';
+import { computed, ref, toValue, MaybeRefOrGetter, WritableComputedRef } from 'vue';
 
+/**
+ * Navigation controls.
+ */
 export function useNavigation({
   itemsCount,
   capacityCurrent,
+  externalStep,
+  externalPage,
 } : {
-  itemsCount : ComputedRef<number>,
-  capacityCurrent : ComputedRef<number>,
+  itemsCount : MaybeRefOrGetter<number>,
+  capacityCurrent : MaybeRefOrGetter<number>,
+  externalStep : WritableComputedRef<string | number>,
+  externalPage : WritableComputedRef<string | number>,
 }) {
-  const innerStep = ref<number>(0);
+  const innerStep = ref(0);
   const maxStep = computed(() => toValue(itemsCount) - toValue(capacityCurrent));
-  const innerPage = ref<number>(0);
+  const innerPage = ref(0);
   const maxPage = computed(() => Math.ceil(toValue(maxStep) / toValue(capacityCurrent)));
-  const isPageTransition = ref<boolean>(false);
-  const setPosition = (step : number) => {
-    const position = {
-      step: toValue(innerStep),
-      page: toValue(innerPage),
-    };
-    if (step === toValue(innerStep)) {
-      return position;
-    }
-    const max = toValue(maxStep);
-    if (step >= max) {
-      position.step = max;
-      position.page = Math.ceil(step / toValue(capacityCurrent));
-    } else if (step < 0) {
-      position.step = 0;
-      position.page = 0;
-    } else {
-      position.step = step;
-      position.page = Math.floor(step / toValue(capacityCurrent));
-    }
-    innerStep.value = position.step;
-    innerPage.value = position.page
-  };
-  const setStep = (value : string | number) => {
-    isPageTransition.value = false;
-    const step = Number(value) || 0;
-    setPosition(step);
-  };
-  const setPage = (value : string | number) => {
-    isPageTransition.value = true;
-    const step = (Number(value) || 0) * toValue(capacityCurrent);
-    setPosition(step);
-  };
+  const isStepTransition = ref(false);
   const classes = computed(() => {
-    return toValue(isPageTransition)
-      ? { 'isTransition-page': true }
-      : { 'isTransition-step': true };
+    return isStepTransition.value
+      ? { 'isTransition-step': true }
+      : { 'isTransition-page': true };
   });
+  const getPosition = (step : number) => {
+    if (step <= 0) {
+      return {
+        step: 0,
+        page: 0,
+      };
+    } else if (step >= maxStep.value) {
+      return {
+        step: maxStep.value,
+        page: maxPage.value,
+      };
+    } else {
+      return {
+        step,
+        page: Math.floor(step / toValue(capacityCurrent)),
+      };
+    }
+  };
+  const setPosition = (step: number, page: number) => {
+    innerStep.value = step;
+    innerPage.value = page;
+    externalStep.value = step;
+    externalPage.value = page;
+  };
+  const setTransition = (step: number) => {
+    const range = Math.abs(step - innerStep.value);
+    isStepTransition.value = range < toValue(capacityCurrent);
+  };
+  const setStep = (value: number) => {
+    const { step, page } = getPosition(value);
+    setTransition(step);
+    setPosition(step, page);
+  };
+  const step = computed({
+    get() {
+      return innerStep.value;
+    },
+    set(value: number) {
+      if (value === innerStep.value) return;
+      setStep(value);
+    },
+  });
+  const page = computed({
+    get() {
+      return innerPage.value;
+    },
+    set(value: number) {
+      if (value === innerPage.value) return;
+      setStep(value * toValue(capacityCurrent));
+    },
+  });
+  watch(externalStep, (value) => step.value = Number(value) || 0);
+  watch(externalPage, (value) => page.value = Number(value) || 0);
+  watch(maxStep, () => setStep(innerStep.value));
   return {
-    step: readonly(innerStep),
+    step,
     maxStep,
-    setStep,
-    page: readonly(innerPage),
+    page,
     maxPage,
-    setPage,
     classes,
   }
 }
