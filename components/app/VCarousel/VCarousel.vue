@@ -1,6 +1,7 @@
 <script
   setup
   lang="ts"
+  generic="Item extends object"
 >
 import { computed, watch, ref } from 'vue';
 import { useCssSettings } from './cssSettings';
@@ -11,27 +12,21 @@ import { useNavigation } from './navigation';
 import { useDragAndDrop } from './dragAndDrop';
 import { Breakpoint, breakpoints } from '~/utils/breakpoints';
 
-type ControlsOption = boolean | Partial<Record<Breakpoint, boolean>>;
-type SettingsOption = string | number | undefined | Partial<Record<Breakpoint, string | number | undefined>>;
-type Props = {
-  items?: Array<object>
+type Option<T> = T | Partial<Record<Breakpoint, T>>;
+const props = withDefaults(defineProps<{
+  items?: Item[]
   modelValue?: string | number
   page?: string | number
-  id?: string
-  draggable?: ControlsOption
-  dots?: ControlsOption
-  nav?: ControlsOption
-  capacity?: SettingsOption
-  padding?: SettingsOption
-  getters?: SettingsOption
-  speedStep?: SettingsOption
-  speedPage?: SettingsOption
-};
-type Emit = {
-  (e: 'update:modelValue', value: number): void
-  (e: 'update:page', value: number): void
-};
-const props = withDefaults(defineProps<Props>(), {
+  key?: keyof Item | ((item: Item) => string | number)
+  draggable?: Option<boolean>
+  dots?: Option<boolean>
+  nav?: Option<boolean>
+  capacity?: Option<string | number>
+  padding?: Option<string | number>
+  getters?: Option<string | number>
+  speedStep?: Option<string | number>
+  speedPage?: Option<string | number>
+}>(), {
   items: () => [],
   modelValue: 0,
   page: 0,
@@ -40,7 +35,10 @@ const props = withDefaults(defineProps<Props>(), {
   nav: true,
   capacity: 1,
 });
-const emit = defineEmits<Emit>();
+const emit = defineEmits<{
+  'update:modelValue': [value: number]
+  'update:page': [value: number]
+}>();
 
 const { styles: cssSettings } = useCssSettings(() => {
   const { capacity, padding, getters, speedStep, speedPage } = props;
@@ -80,6 +78,18 @@ const {
   externalStep: useVModel(props, 'modelValue', emit),
   externalPage: useVModel(props, 'page', emit),
 });
+
+/**
+ * Returns value of key attribute (v-for).
+ * @param item
+ * @returns Can invalid so as not to duplicate validation from vue.
+ */
+const getKey = (item: Item): any => {
+  if (!props.key) return;
+  return (typeof props.key === 'function')
+    ? props.key(item)
+    : item[props.key];
+};
 
 // const stageBack = ref<HTMLElement | null>(null);
 // const stageFront = ref<HTMLElement | null>(null);
@@ -174,7 +184,7 @@ const {
           <slot name="items">
             <div
               v-for="item in items"
-              :key="item[id]"
+              :key="getKey(item)"
               ref="stageItems"
               class="VCarousel-Item"
             >
