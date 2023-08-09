@@ -9,7 +9,7 @@ import { useControls } from './controls';
 import { useDots } from './dots';
 import { useCurrentSetting } from './currentSetting';
 import { useNavigation } from './navigation';
-import { useDragAndDrop } from './dragAndDrop';
+import { useDrag } from './drag';
 import { Breakpoint, breakpoints } from '~/utils/breakpoints';
 
 type Option<T> = T | Partial<Record<Breakpoint, T>>;
@@ -71,7 +71,7 @@ const {
   maxStep,
   page,
   maxPage,
-  classes: navigationClasses,
+  isStepTransition,
 } = useNavigation({
   itemsCount,
   capacityCurrent,
@@ -91,23 +91,18 @@ const getKey = (item: Item): any => {
     : item[props.key];
 };
 
-// const stageBack = ref<HTMLElement | null>(null);
-// const stageFront = ref<HTMLElement | null>(null);
-// const stageItems = ref<Array<HTMLElement> | []>([]);
-// const {
-//   events: dragEvents,
-//   classes: dragClasses,
-//   styles: dragStyles,
-//   step: dragStep,
-// } = useDragAndDrop({
-//   stageBack,
-//   stageFront,
-//   stageItems,
-//   currentCapacity,
-// });
-// watch(dragStep, (value) => {
-//   setStep(value);
-// });
+const stageFront = ref<HTMLElement | null>(null);
+const {
+  events: dragEvents,
+  styles: dragStyles,
+} = useDrag({
+  el: stageFront,
+  step,
+  maxStep,
+  itemsCount,
+  isDraggable: ref(true),
+  isStepTransition,
+});
 </script>
 
 <template>
@@ -168,16 +163,20 @@ const getKey = (item: Item): any => {
       class="VCarousel-Stage"
     >
       <div
-        ref="stageBack"
         class="VCarousel-BackStage"
+        v-on="{
+          ...dragEvents
+        }"
       >
         <div
           ref="stageFront"
           :style="{
             '--step' : step,
+            ...dragStyles
           }"
           :class="{
-            ...navigationClasses,
+            'isTransition-step': isStepTransition,
+            'isTransition-page': !isStepTransition,
           }"
           class="VCarousel-FrontStage"
         >
@@ -185,7 +184,6 @@ const getKey = (item: Item): any => {
             <div
               v-for="item in items"
               :key="getKey(item)"
-              ref="stageItems"
               class="VCarousel-Item"
             >
               <slot :item="item" />
@@ -260,13 +258,6 @@ $settings: "padding", "getters", "capacity", "speedstep", "speedpage";
   display: flex;
   position: relative;
 
-  &.isDraggable {
-    touch-action: manipulation;
-  }
-
-  &.isDragged {
-    transition: none;
-  }
   &.isTransition-step {
     transition-duration: var(--speedstep);
   }

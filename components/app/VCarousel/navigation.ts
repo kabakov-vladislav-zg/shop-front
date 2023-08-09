@@ -18,12 +18,7 @@ export function useNavigation({
   const maxStep = computed(() => toValue(itemsCount) - toValue(capacityCurrent));
   const innerPage = ref(0);
   const maxPage = computed(() => Math.ceil(toValue(maxStep) / toValue(capacityCurrent)));
-  const isStepTransition = ref(false);
-  const classes = computed(() => {
-    return isStepTransition.value
-      ? { 'isTransition-step': true }
-      : { 'isTransition-page': true };
-  });
+  const isStepTransition = ref(true);
   const getPosition = (step : number) => {
     if (step <= 0) {
       return {
@@ -83,6 +78,6 @@ export function useNavigation({
     maxStep,
     page,
     maxPage,
-    classes,
+    isStepTransition,
   }
 }
